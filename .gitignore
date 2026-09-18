@@ -1,0 +1,25 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Variables de entorno y secretos
+.env
+.env.local
+
+# Archivos de datos generados en runtime
+data/*.tmp
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
