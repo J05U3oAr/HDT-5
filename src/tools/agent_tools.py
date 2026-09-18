@@ -18,7 +18,7 @@ def consultar_clima_paracaidismo(fecha: str) -> str:
 
     Args:
         fecha: Fecha a consultar en formato YYYY-MM-DD, o términos como 'hoy' o 'mañana'.
-               Recuerde: Open-Meteo únicamente provee predicción hasta un máximo de 16 días.
+               Open-Meteo provee 16 fechas contando hoy: desde hoy hasta hoy + 15 días.
     """
     try:
         reporte = weather_service.get_weather_report(fecha)
@@ -43,7 +43,8 @@ def agendar_cita_salto(
 
     Args:
         nombre_cliente: Nombre completo del cliente que saltará.
-        fecha: Fecha de la cita en formato YYYY-MM-DD, o 'hoy'/'mañana' (máximo 16 días hacia el futuro).
+        fecha: Fecha de la cita en formato YYYY-MM-DD, o 'hoy'/'mañana'
+               (ventana de 16 fechas: hoy hasta hoy + 15 días).
         hora: Hora deseada para el salto (ejemplo: '09:00 AM', '11:30 AM').
         tipo_salto: Modalidad del salto (ej. 'Tándem', 'Tándem con Video HD', 'Tándem Experimentado').
     """

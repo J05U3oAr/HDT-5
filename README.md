@@ -57,4 +57,5 @@ Las pruebas unitarias no hacen llamadas a la API ni consumen créditos:
 python -m pytest -q
 ```
 
-Cubren las reglas de seguridad meteorológica, el límite de 16 días y la recuperación de información de FAQs.
+Cubren las reglas de seguridad meteorológica, la ventana de 16 fechas (hoy hasta hoy + 15 días),
+los requisitos de edad y la recuperación de información de FAQs.

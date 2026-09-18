@@ -78,7 +78,7 @@ class CalendarService:
                     f"- Ráfagas: {reporte.wind_gusts_10m:.1f} km/h (límite seguro: 35 km/h)\n"
                     f"- Precipitación: {reporte.precipitation:.1f} mm (límite: 0.0 mm)\n"
                     f"- Cobertura nubosa: {reporte.cloud_cover:.0f}% (límite: 75%)\n\n"
-                    f"Por favor elija otra fecha dentro de los próximos 16 días con condiciones favorables."
+                    f"Por favor elija otra fecha dentro de la ventana disponible (hoy hasta hoy + 15 días)."
                 ),
                 "reporte": reporte.model_dump(),
             }

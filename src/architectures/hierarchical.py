@@ -74,7 +74,11 @@ def build_hierarchical_system() -> Agent:
         instructions=(
             "Eres el oficial de normativas y requisitos de seguridad de Parachute S.A. "
             "Consulta la herramienta `consultar_faqs_paracaidismo` para responder con exactitud "
-            "sobre edad mínima (18 años, o 16 con autorización), peso máximo (105 kg / 230 lbs), "
+            "sobre edad, peso y políticas. Regla exacta de edad: la edad mínima general es 18 años; "
+            "únicamente las personas de 16 y 17 años pueden saltar con autorización firmada de sus "
+            "padres o tutores; los menores de 16 años no pueden saltar. Nunca describas la excepción "
+            "como aplicable a 'menores de 16'. El peso máximo es 105 kg / 230 lbs. Consulta las FAQs "
+            "antes de responder y conserva literalmente las edades, cantidades y restricciones sobre "
             "transferencias de citas (48 horas de anticipación) y suspensiones por mal tiempo."
         ),
         model=model,
@@ -132,7 +136,9 @@ def build_hierarchical_system() -> Agent:
             "Tienes a tu cargo a dos especialistas:\n"
             "- Para información del evento, precios y parqueo: usa `consultar_info_evento_y_precios`.\n"
             "- Para requisitos de edad, peso y políticas de seguridad: usa `consultar_requisitos_y_politicas`.\n"
-            "Garantiza respuestas cordiales, verídicas y apegadas estrictamente a los lineamientos oficiales."
+            "Garantiza respuestas cordiales, verídicas y apegadas estrictamente a los lineamientos oficiales. "
+            "No alteres cifras ni rangos al consolidar la respuesta. En particular: 18 años es la edad "
+            "mínima general, 16 y 17 requieren autorización, y menores de 16 no pueden saltar."
         ),
         model=model,
         tools=[tool_faq_worker, tool_policy_worker],
@@ -161,7 +167,9 @@ def build_hierarchical_system() -> Agent:
             "1. `delego_gerencia_operaciones`: Para asuntos técnicos de vuelo, clima en la zona de salto y agendamiento de citas.\n"
             "2. `delego_gerencia_atencion_cliente`: Para consultas sobre el evento, costos de saltos, requisitos físicos y políticas.\n"
             "Tu tono debe ser ejecutivo, cálido, confiable y profesional. Revisa los resultados devueltos por tus "
-            "gerentes y preséntaselos al usuario con la máxima cortesía y claridad."
+            "gerentes y preséntaselos al usuario con la máxima cortesía y claridad. Conserva exactamente las "
+            "cifras y restricciones informadas por las gerencias; no amplíes excepciones de edad. La excepción "
+            "es solo para personas de 16 y 17 años con autorización, nunca para menores de 16."
         ),
         model=model,
         tools=[tool_operations_manager, tool_support_manager],

@@ -9,7 +9,10 @@ from src.core.schemas import SafetyStatus, WeatherReport
 # Constantes fijadas por los requerimientos del proyecto
 LATITUDE = 14.013722
 LONGITUDE = -90.771611
+# Open-Meteo devuelve una ventana de 16 fechas que incluye el día actual.
+# Por ello, el último desplazamiento válido es hoy + 15 días.
 MAX_FORECAST_DAYS = 16
+MAX_FORECAST_OFFSET_DAYS = MAX_FORECAST_DAYS - 1
 
 
 class WeatherServiceError(Exception):
@@ -18,7 +21,7 @@ class WeatherServiceError(Exception):
 
 
 class ForecastRangeError(WeatherServiceError):
-    """Excepcion cuando la fecha solicitada excede los 16 dias de prediccion."""
+    """Excepcion cuando la fecha queda fuera de la ventana de prediccion."""
     pass
 
 
@@ -58,9 +61,9 @@ class WeatherService:
         )
 
     def validate_date_range(self, target_date: datetime.date) -> None:
-        """Verifica que la fecha este dentro del rango permitido (hoy hasta hoy + 16 dias)."""
+        """Verifica la ventana de 16 fechas: desde hoy hasta hoy + 15 dias."""
         today = datetime.date.today()
-        max_allowed_date = today + datetime.timedelta(days=MAX_FORECAST_DAYS)
+        max_allowed_date = today + datetime.timedelta(days=MAX_FORECAST_OFFSET_DAYS)
 
         if target_date < today:
             raise ForecastRangeError(
@@ -70,10 +73,25 @@ class WeatherService:
 
         if target_date > max_allowed_date:
             raise ForecastRangeError(
-                f"Open-Meteo únicamente provee predicción hasta {MAX_FORECAST_DAYS} días hacia el futuro. "
+                f"Open-Meteo provee una ventana de {MAX_FORECAST_DAYS} fechas contando el día de hoy. "
                 f"La fecha solicitada ({target_date.isoformat()}) excede este límite (la fecha máxima permitida es {max_allowed_date.isoformat()}). "
-                f"Por favor elija una fecha dentro de los próximos 16 días."
+                f"Por favor elija una fecha entre hoy y los próximos {MAX_FORECAST_OFFSET_DAYS} días."
             )
+
+    @staticmethod
+    def _require_numeric_metric(value: object, metric: str, date_str: str) -> float:
+        """Convierte una métrica sin ocultar datos ausentes del proveedor."""
+        if value is None:
+            raise WeatherServiceError(
+                f"Open-Meteo aún no publicó datos completos para {date_str}; "
+                f"falta la métrica '{metric}'. Intente nuevamente más tarde o elija una fecha más cercana."
+            )
+        try:
+            return float(value)
+        except (TypeError, ValueError) as err:
+            raise WeatherServiceError(
+                f"Open-Meteo devolvió un valor inválido para '{metric}' en la fecha {date_str}."
+            ) from err
 
     def fetch_weather_for_date(self, target_date: datetime.date) -> dict:
         """Consulta la API de Open-Meteo para las coordenadas y fecha indicadas."""
@@ -107,11 +125,11 @@ class WeatherService:
             curr = data["current"]
             return {
                 "date": date_str,
-                "temperature_2m": float(curr.get("temperature_2m", 25.0)),
-                "wind_speed_10m": float(curr.get("wind_speed_10m", 15.0)),
-                "wind_gusts_10m": float(curr.get("wind_gusts_10m", 20.0)),
-                "precipitation": float(curr.get("precipitation", 0.0)),
-                "cloud_cover": float(curr.get("cloud_cover", 30.0)),
+                "temperature_2m": self._require_numeric_metric(curr.get("temperature_2m"), "temperature_2m", date_str),
+                "wind_speed_10m": self._require_numeric_metric(curr.get("wind_speed_10m"), "wind_speed_10m", date_str),
+                "wind_gusts_10m": self._require_numeric_metric(curr.get("wind_gusts_10m"), "wind_gusts_10m", date_str),
+                "precipitation": self._require_numeric_metric(curr.get("precipitation"), "precipitation", date_str),
+                "cloud_cover": self._require_numeric_metric(curr.get("cloud_cover"), "cloud_cover", date_str),
             }
 
         # Extraer del bloque daily
@@ -121,13 +139,19 @@ class WeatherService:
             raise WeatherServiceError(f"No se encontraron datos de pronóstico para la fecha {date_str} en Open-Meteo.")
 
         idx = time_list.index(date_str)
+
+        def daily_value(metric: str) -> float:
+            values = daily.get(metric)
+            value = values[idx] if isinstance(values, list) and idx < len(values) else None
+            return self._require_numeric_metric(value, metric, date_str)
+
         return {
             "date": date_str,
-            "temperature_2m": float(daily.get("temperature_2m_max", [25.0])[idx]),
-            "wind_speed_10m": float(daily.get("wind_speed_10m_max", [15.0])[idx]),
-            "wind_gusts_10m": float(daily.get("wind_gusts_10m_max", [20.0])[idx]),
-            "precipitation": float(daily.get("precipitation_sum", [0.0])[idx]),
-            "cloud_cover": float(daily.get("cloud_cover_mean", [30.0])[idx]),
+            "temperature_2m": daily_value("temperature_2m_max"),
+            "wind_speed_10m": daily_value("wind_speed_10m_max"),
+            "wind_gusts_10m": daily_value("wind_gusts_10m_max"),
+            "precipitation": daily_value("precipitation_sum"),
+            "cloud_cover": daily_value("cloud_cover_mean"),
         }
 
     def evaluate_safety_criteria(
